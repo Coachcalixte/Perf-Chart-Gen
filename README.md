@@ -36,6 +36,7 @@ create_athlete_report(
     weight=80.0,  # kg
     height=185.0,  # cm
     sprint_time=1.82,  # seconds
+    sprint_30m_time=4.52,  # seconds
     jump_height=51.5,  # cm
 )
 ```
@@ -54,14 +55,15 @@ The CSV file should have the following columns:
 - Name
 - Weight (kg)
 - Height (cm)
-- Sprint (seconds)
+- 10m Sprint (seconds)
+- 30m Sprint (seconds)
 - CMJ (cm)
 
 Example:
 ```
-Name,Weight,Height,Sprint,CMJ
-John Doe,80,185,1.82,51.5
-Jane Smith,65,170,1.90,48.2
+Name,Weight,Height,Sprint,Sprint_30m,CMJ
+John Doe,80,185,1.82,4.29,51.5
+Jane Smith,65,170,1.9,4.32,48.2
 ```
 
 ## Performance Categories
@@ -71,6 +73,12 @@ Jane Smith,65,170,1.90,48.2
 - Good: 1.80s - 1.84s
 - Average: 1.85s - 1.90s
 - Poor: > 1.91s
+
+### 30m Sprint (seconds)
+- Excellent: < 4.17s
+- Good: 4.17s - 4.30s
+- Average: 4.30s - 4.45s
+- Poor: > 4.45s
 
 ### CMJ - Counter Movement Jump (cm)
 - Excellent: > 52cm

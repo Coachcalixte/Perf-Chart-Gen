@@ -75,6 +75,64 @@ def create_sprint_chart(time_value, test_name="10m Sprint", unit="s"):
     
     return img_data
 
+
+def create_sprint_30m_chart(time_value, test_name="30m Sprint", unit="s"):
+    """
+    Create a bar chart for sprint time with color-coded background.
+    
+    Parameters:
+    time_value (float): Time value in seconds
+    test_name (str): Name of the sprint test
+    unit (str): Unit of measurement
+    
+    Returns:
+    BytesIO: Image data in BytesIO buffer
+    """
+    fig, ax = plt.subplots(figsize=(6, 4))
+    
+    # Set up the color regions based on performance
+    colors = [(0, 0.8, 0), (0.9, 0.9, 0), (1, 0.5, 0), (0.8, 0, 0)]  # green, yellow, orange, red
+    positions = [4.00, 4.17, 4.30, 4.45, 5.00]  # Performance thresholds
+    
+    # Create a rectangle for each color region
+    for i in range(len(colors)):
+        height = positions[i+1] - positions[i]
+        rect = Rectangle((0, positions[i]), 1, height, color=colors[i], alpha=0.3)
+        ax.add_patch(rect)
+    
+    # Create a bar chart for the performance
+    bar_width = 0.5
+    ax.bar(0.5, time_value, width=bar_width, color='blue', edgecolor='black')
+    
+    # Set chart limits and labels
+    ax.set_xlim(0, 1)
+    ax.set_ylim(positions[0], positions[-1])
+    ax.set_ylabel(f"Time ({unit})")
+    ax.set_title(f"{test_name} Performance")
+    
+    # Remove x-axis ticks, only show test name
+    ax.set_xticks([0.5])
+    ax.set_xticklabels([test_name])
+    
+    # Add performance value on top of the bar
+    ax.text(0.5, time_value + 0.01, f"{time_value}", ha='center', fontweight='bold')
+    
+    # Add performance categories as annotations
+    ax.text(0.85, 4.08, "Excellent", fontsize=9, ha='right')
+    ax.text(0.85, 4.21, "Good", fontsize=9, ha='right')
+    ax.text(0.85, 4.38, "Average", fontsize=9, ha='right')
+    ax.text(0.85, 4.52, "Poor", fontsize=9, ha='right')
+    
+    plt.tight_layout()
+    
+    # Save to BytesIO object instead of file
+    img_data = io.BytesIO()
+    plt.savefig(img_data, format='png', dpi=150, bbox_inches="tight")
+    img_data.seek(0)  # Move to the beginning of BytesIO
+    plt.close(fig)  # Close the figure to free memory
+    
+    return img_data
+
 def create_jump_chart(height_value, test_name="CMJ", unit="cm"):
     """
     Create a bar chart for jump height with color-coded background.
@@ -132,7 +190,7 @@ def create_jump_chart(height_value, test_name="CMJ", unit="cm"):
     
     return img_data
 
-def create_athlete_report(athlete_name, weight, height, sprint_time, jump_height, output_filename=None, output_dir=None):
+def create_athlete_report(athlete_name, weight, height, sprint_time, sprint_30m_time, jump_height, output_filename=None, output_dir=None):
     """
     Create a comprehensive PDF report for an athlete with personal info and performance charts
     
@@ -212,6 +270,12 @@ def create_athlete_report(athlete_name, weight, height, sprint_time, jump_height
     
     # Create and add sprint chart
     sprint_img_data = create_sprint_chart(sprint_time)
+    sprint_img = Image(sprint_img_data, width=5*inch, height=3.5*inch)
+    story.append(sprint_img)
+    story.append(Spacer(1, 0.25*inch))
+
+    # Create and add sprint 30m chart
+    sprint_img_data = create_sprint_30m_chart(sprint_30m_time)
     sprint_img = Image(sprint_img_data, width=5*inch, height=3.5*inch)
     story.append(sprint_img)
     story.append(Spacer(1, 0.25*inch))

@@ -13,9 +13,9 @@ def read_athlete_data(csv_file):
     Read athlete data from a CSV file.
     
     Expected CSV format:
-    Name,Weight,Height,Sprint,CMJ
-    John Doe,80,185,1.82,51.5
-    Jane Smith,65,170,1.9,48.2
+    Name,Weight,Height,Sprint,Sprint_30m,CMJ
+    John Doe,80,185,1.82,4.29,51.5
+    Jane Smith,65,170,1.9,4.32,48.2
     ...
     
     Parameters:
@@ -31,7 +31,7 @@ def read_athlete_data(csv_file):
             reader = csv.DictReader(file)
             
             # Validate headers
-            required_fields = ['Name', 'Weight', 'Height', 'Sprint', 'CMJ']
+            required_fields = ['Name', 'Weight', 'Height', 'Sprint', 'Sprint_30m','CMJ']
             headers = reader.fieldnames
             
             # Case-insensitive check for required fields
@@ -60,6 +60,7 @@ def read_athlete_data(csv_file):
                         'weight': float(row[field_mapping['Weight']]),
                         'height': float(row[field_mapping['Height']]),
                         'sprint': float(row[field_mapping['Sprint']]),
+                        'sprint_30m': float(row[field_mapping['Sprint_30m']]),
                         'jump': float(row[field_mapping['CMJ']])
                     }
                     athletes.append(athlete)
@@ -106,6 +107,7 @@ def generate_team_reports(csv_file, output_dir="team_reports"):
                 weight=athlete['weight'],
                 height=athlete['height'],
                 sprint_time=athlete['sprint'],
+                sprint_30m_time=athlete['sprint_30m'],
                 jump_height=athlete['jump'],
                 output_dir=output_dir
             )
