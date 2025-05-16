@@ -60,10 +60,10 @@ def create_sprint_chart(time_value, test_name="10m Sprint", unit="s"):
     ax.text(0.5, time_value + 0.01, f"{time_value}", ha='center', fontweight='bold')
     
     # Add performance categories as annotations
-    ax.text(0.85, 1.77, "Excellent", fontsize=9, ha='right')
-    ax.text(0.85, 1.82, "Good", fontsize=9, ha='right')
-    ax.text(0.85, 1.88, "Average", fontsize=9, ha='right')
-    ax.text(0.85, 1.95, "Poor", fontsize=9, ha='right')
+    ax.text(0.90, 1.77, "Excellent", fontsize=9, ha='right')
+    ax.text(0.90, 1.82, "Good", fontsize=9, ha='right')
+    ax.text(0.90, 1.88, "Average", fontsize=9, ha='right')
+    ax.text(0.90, 1.95, "Poor", fontsize=9, ha='right')
     
     plt.tight_layout()
     
@@ -118,10 +118,10 @@ def create_sprint_30m_chart(time_value, test_name="30m Sprint", unit="s"):
     ax.text(0.5, time_value + 0.01, f"{time_value}", ha='center', fontweight='bold')
     
     # Add performance categories as annotations
-    ax.text(0.85, 4.08, "Excellent", fontsize=9, ha='right')
-    ax.text(0.85, 4.21, "Good", fontsize=9, ha='right')
-    ax.text(0.85, 4.38, "Average", fontsize=9, ha='right')
-    ax.text(0.85, 4.52, "Poor", fontsize=9, ha='right')
+    ax.text(0.90, 4.08, "Excellent", fontsize=9, ha='right')
+    ax.text(0.90, 4.21, "Good", fontsize=9, ha='right')
+    ax.text(0.90, 4.38, "Average", fontsize=9, ha='right')
+    ax.text(0.90, 4.52, "Poor", fontsize=9, ha='right')
     
     plt.tight_layout()
     
@@ -175,10 +175,10 @@ def create_jump_chart(height_value, test_name="CMJ", unit="cm"):
     ax.text(0.5, height_value + 0.5, f"{height_value}", ha='center', fontweight='bold')
     
     # Add performance categories as annotations
-    ax.text(0.85, 34, "Poor", fontsize=9, ha='right')
-    ax.text(0.85, 42, "Average", fontsize=9, ha='right')
-    ax.text(0.85, 48, "Good", fontsize=9, ha='right')
-    ax.text(0.85, 56, "Excellent", fontsize=9, ha='right')
+    ax.text(0.90, 34, "Poor", fontsize=9, ha='right')
+    ax.text(0.90, 42, "Average", fontsize=9, ha='right')
+    ax.text(0.90, 48, "Good", fontsize=9, ha='right')
+    ax.text(0.90, 56, "Excellent", fontsize=9, ha='right')
     
     plt.tight_layout()
     
