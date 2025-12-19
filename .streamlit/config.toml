@@ -1,0 +1,62 @@
+# Streamlit Configuration for Production Deployment
+# This file configures Streamlit to work properly when embedded in iframes
+# Place this file in .streamlit/ directory in your app root
+
+[server]
+# Enable CORS to allow iframe embedding from different domains
+enableCORS = true
+
+# Disable XSRF protection - required for iframe embedding
+# Note: Only disable if your app doesn't handle sensitive operations
+# For read-only or public tools, this is safe
+enableXsrfProtection = false
+
+# Run in headless mode (no browser auto-open)
+headless = true
+
+# Listen on all network interfaces
+address = "0.0.0.0"
+
+# Default port (can be overridden by --server.port flag)
+port = 8501
+
+# Disable file watcher in production (reduces resource usage)
+fileWatcherType = "none"
+
+# Maximum upload size (50MB) - adjust if needed for larger CSV files
+maxUploadSize = 50
+
+[browser]
+# Don't collect usage statistics
+gatherUsageStats = false
+
+# Server address for the browser to connect to
+# Leave empty to use default (current domain)
+serverAddress = ""
+
+[theme]
+# Optional: Customize theme colors to match WordPress site
+# Uncomment and modify if desired
+
+# Primary color (used for interactive widgets)
+# primaryColor = "#0284c7"
+
+# Background color
+# backgroundColor = "#ffffff"
+
+# Secondary background color (used for sidebar)
+# secondaryBackgroundColor = "#f3f4f6"
+
+# Text color
+# textColor = "#111827"
+
+# Font family
+# font = "sans serif"
+
+[client]
+# Show error details in production for debugging
+# Set to false once fully tested
+showErrorDetails = true
+
+# Toolbar mode: "auto" (default), "developer", "viewer", "minimal"
+toolbarMode = "minimal"
