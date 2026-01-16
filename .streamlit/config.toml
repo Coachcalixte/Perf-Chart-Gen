@@ -35,23 +35,22 @@ gatherUsageStats = false
 serverAddress = ""
 
 [theme]
-# Optional: Customize theme colors to match WordPress site
-# Uncomment and modify if desired
+# Customized to match unityperformancelab.ch WordPress theme
 
-# Primary color (used for interactive widgets)
-# primaryColor = "#0284c7"
+# Primary color (used for interactive widgets, buttons, sliders)
+primaryColor = "#007cba"
 
-# Background color
-# backgroundColor = "#ffffff"
+# Background color for main content area
+backgroundColor = "#ffffff"
 
-# Secondary background color (used for sidebar)
-# secondaryBackgroundColor = "#f3f4f6"
+# Secondary background color (used for sidebar and widgets)
+secondaryBackgroundColor = "#f5f5f5"
 
-# Text color
-# textColor = "#111827"
+# Text color matching WordPress
+textColor = "#32373c"
 
 # Font family
-# font = "sans serif"
+font = "sans serif"
 
 [client]
 # Show error details in production for debugging

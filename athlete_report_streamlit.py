@@ -42,6 +42,73 @@ st.set_page_config(
     layout="wide"
 )
 
+# Custom CSS to hide Streamlit branding and match WordPress theme
+st.markdown("""
+    <style>
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Hide "Deploy" button */
+    .stDeployButton {display: none;}
+
+    /* Customize buttons to match WordPress theme */
+    .stButton>button {
+        background-color: #007cba;
+        color: white;
+        border-radius: 4px;
+        padding: 0.5rem 1.5rem;
+        border: none;
+        font-weight: 500;
+        transition: background-color 0.3s;
+    }
+
+    .stButton>button:hover {
+        background-color: #005a87;
+    }
+
+    /* Customize file uploader */
+    .stFileUploader label {
+        color: #32373c;
+        font-weight: 500;
+    }
+
+    /* Customize download buttons */
+    .stDownloadButton>button {
+        background-color: #007cba;
+        color: white;
+        border-radius: 4px;
+        padding: 0.5rem 1.5rem;
+        border: none;
+        font-weight: 500;
+    }
+
+    .stDownloadButton>button:hover {
+        background-color: #005a87;
+    }
+
+    /* Clean up spacing */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    /* Customize headings */
+    h1, h2, h3 {
+        color: #32373c;
+        font-weight: 600;
+    }
+
+    /* Responsive design for mobile */
+    @media (max-width: 768px) {
+        .block-container {
+            padding: 1rem;
+        }
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # No need for a temporary directory anymore as we're using in-memory buffers
 
 def display_preview_charts(athlete):
