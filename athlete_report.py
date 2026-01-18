@@ -190,6 +190,63 @@ def create_jump_chart(height_value, test_name="CMJ", unit="cm"):
     
     return img_data
 
+def create_wattbike_chart(power_per_kg, test_name="Wattbike 6s", unit="W/kg"):
+    """
+    Create a Wattbike power output chart with performance zones.
+
+    Args:
+        power_per_kg (float): Power output in watts per kilogram
+        test_name (str): Name of the test for the chart title
+        unit (str): Unit of measurement for axis labels
+
+    Returns:
+        BytesIO: Image buffer containing the chart
+    """
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    # Define performance zones (W/kg)
+    # Colors: Red (Need work) → Orange (Average) → Yellow (Good) → Green (WOW)
+    colors = [(0.8, 0, 0), (1, 0.5, 0), (0.9, 0.9, 0), (0, 0.8, 0)]
+    positions = [0, 15, 20, 25, 35]  # Zone boundaries
+
+    # Draw color-coded background zones
+    for i in range(len(colors)):
+        height = positions[i+1] - positions[i]
+        rect = Rectangle((0, positions[i]), 1, height, color=colors[i], alpha=0.3)
+        ax.add_patch(rect)
+
+    # Add zone labels
+    ax.text(0.90, 10, "Need to work", fontsize=9, ha='right', va='center')
+    ax.text(0.90, 17.5, "Average", fontsize=9, ha='right', va='center')
+    ax.text(0.90, 22.5, "Good", fontsize=9, ha='right', va='center')
+    ax.text(0.90, 30, "WOW", fontsize=9, ha='right', va='center')
+
+    # Draw athlete's performance bar
+    bar_width = 0.5
+    ax.bar(0.5, power_per_kg, width=bar_width, color='blue', edgecolor='black', linewidth=2)
+
+    # Add value label on bar
+    ax.text(0.5, power_per_kg + 1, f"{power_per_kg:.1f}",
+            ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+    # Configure axes
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 35)
+    ax.set_ylabel(f'{test_name} ({unit})', fontsize=10)
+    ax.set_title(f'{test_name} Performance', fontsize=12, fontweight='bold')
+    ax.set_xticks([])  # Hide x-axis
+    ax.grid(axis='y', alpha=0.3)
+
+    plt.tight_layout()
+
+    # Save to BytesIO object instead of file
+    img_data = io.BytesIO()
+    plt.savefig(img_data, format='png', dpi=150, bbox_inches="tight")
+    img_data.seek(0)  # Move to the beginning of BytesIO
+    plt.close(fig)  # Close the figure to free memory
+
+    return img_data
+
 def create_athlete_report(athlete_name, weight, height, sprint_time, sprint_30m_time, jump_height, output_filename=None, output_dir=None):
     """
     Create a comprehensive PDF report for an athlete with personal info and performance charts
