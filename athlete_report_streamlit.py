@@ -378,9 +378,63 @@ def generate_pdf_report(athlete, season_type, available_columns):
             st.error(f"Error generating report: {str(e)}")
             return None
 
+def normalize_column_name(col_name):
+    """
+    Normalize column name for flexible matching.
+    Removes special characters, extra spaces, and converts to lowercase.
+    """
+    import re
+    # Convert to lowercase
+    normalized = col_name.lower()
+    # Remove content in parentheses (units, etc.)
+    normalized = re.sub(r'\([^)]*\)', '', normalized)
+    # Remove special characters but keep spaces
+    normalized = re.sub(r'[^\w\s]', '', normalized)
+    # Replace multiple spaces with single space
+    normalized = re.sub(r'\s+', ' ', normalized)
+    # Remove leading/trailing spaces
+    normalized = normalized.strip()
+    # Replace spaces with underscores for multi-word fields
+    normalized = normalized.replace(' ', '_')
+    return normalized
+
+def find_matching_column(target_field, df_columns):
+    """
+    Find a column that matches the target field, handling common variations.
+
+    Args:
+        target_field (str): The field we're looking for (e.g., 'Sprint_30m')
+        df_columns (list): List of column names from the CSV
+
+    Returns:
+        str or None: The actual column name from CSV, or None if not found
+    """
+    # Normalize target field
+    target_normalized = normalize_column_name(target_field)
+
+    # Also try common variations
+    variations = [target_normalized]
+
+    # Handle specific common variations
+    if target_field == 'Sprint_30m':
+        variations.extend(['sprint_30m', 'sprint30m', 'sprint_30'])
+    elif target_field == 'StopGo':
+        variations.extend(['stopgo', 'stop_go', 'stop_and_go', 'stop__go'])
+    elif target_field == 'Yoyo':
+        variations.extend(['yoyo', 'yo_yo', 'yoyo_test'])
+
+    # Check each column in the dataframe
+    for col in df_columns:
+        col_normalized = normalize_column_name(col)
+        if col_normalized in variations:
+            return col
+
+    return None
+
 def process_csv(df, season_type):
     """
     Process CSV with fully optional columns (only Name required).
+    Handles flexible column name matching (e.g., "Weight (kg)" matches "Weight").
 
     Args:
         df (pd.DataFrame): Raw uploaded DataFrame
@@ -394,18 +448,16 @@ def process_csv(df, season_type):
     required_fields = config["required_columns"]  # Just ['Name']
     optional_fields_config = config["optional_columns"]
 
-    df_columns_lower = [col.lower() for col in df.columns]
-
     column_mapping = {}
     missing_required = []
     available_columns = {}
 
     # Check REQUIRED columns (only Name)
     for field in required_fields:
-        try:
-            idx = df_columns_lower.index(field.lower())
-            column_mapping[df.columns[idx]] = field
-        except ValueError:
+        matched_col = find_matching_column(field, df.columns)
+        if matched_col:
+            column_mapping[matched_col] = field
+        else:
             missing_required.append(field)
 
     # FAIL if Name is missing
@@ -413,13 +465,13 @@ def process_csv(df, season_type):
         st.error(f"❌ Missing required column: Name")
         return None, None
 
-    # Detect OPTIONAL columns
+    # Detect OPTIONAL columns with flexible matching
     for field, metadata in optional_fields_config.items():
-        try:
-            idx = df_columns_lower.index(field.lower())
-            column_mapping[df.columns[idx]] = field
+        matched_col = find_matching_column(field, df.columns)
+        if matched_col:
+            column_mapping[matched_col] = field
             available_columns[field] = True
-        except ValueError:
+        else:
             available_columns[field] = False
 
     # Info message for available tests
