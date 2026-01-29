@@ -540,8 +540,49 @@ def main():
     # Display season requirements
     config = SEASON_CONFIG[season_type]
     with st.expander("ℹ️ Required CSV Format"):
-        st.write(f"**Columns:** {', '.join(config['required_columns'])}")
         st.write(f"**Description:** {config['description']}")
+        st.write("")
+
+        # Show required columns
+        st.write("**Required Columns:**")
+        st.write(f"• {', '.join(config['required_columns'])}")
+
+        # Show optional columns if they exist
+        optional_cols = config.get('optional_columns', {})
+        if optional_cols:
+            st.write("")
+            st.write("**Optional Columns:**")
+
+            # Separate anthropometric data from test data
+            anthropometric = []
+            tests = []
+
+            for col_name, col_metadata in optional_cols.items():
+                chart_name = col_metadata.get('chart', '')
+                if chart_name:
+                    # This is a test that generates a chart
+                    chart_display = chart_name.replace('_', ' ').title()
+                    tests.append(f"• {col_name} → {chart_display} chart")
+                else:
+                    # This is anthropometric data
+                    unit = col_metadata.get('unit', '')
+                    if unit:
+                        anthropometric.append(f"• {col_name} ({unit})")
+                    else:
+                        anthropometric.append(f"• {col_name}")
+
+            # Display anthropometric data first
+            if anthropometric:
+                for item in anthropometric:
+                    st.write(item)
+
+            # Then display tests
+            if tests:
+                if anthropometric:
+                    st.write("")
+                    st.write("**Optional Performance Tests:**")
+                for item in tests:
+                    st.write(item)
 
     st.divider()
 
