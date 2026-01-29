@@ -247,6 +247,128 @@ def create_wattbike_chart(power_per_kg, test_name="Wattbike 6s", unit="W/kg"):
 
     return img_data
 
+def create_yoyo_chart(level_value, test_name="Yoyo Test", unit="level"):
+    """
+    Yoyo test chart (higher is better).
+
+    Performance zones:
+    - Below 17.0: Below Average (Red)
+    - 17.1-18.0: Average (Orange)
+    - 18.1-19.0: Good (Yellow)
+    - 19.1+: Excellent (Green)
+
+    Args:
+        level_value (float): Yoyo test level reached
+        test_name (str): Name for chart title
+        unit (str): Unit label
+
+    Returns:
+        BytesIO: Image buffer
+    """
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    # Higher is better → red bottom, green top (like CMJ)
+    colors = [(0.8, 0, 0), (1, 0.5, 0), (0.9, 0.9, 0), (0, 0.8, 0)]
+    positions = [15.0, 17.0, 18.0, 19.0, 21.0]
+
+    # Draw zones
+    for i in range(len(colors)):
+        height = positions[i+1] - positions[i]
+        rect = Rectangle((0, positions[i]), 1, height, color=colors[i], alpha=0.3)
+        ax.add_patch(rect)
+
+    # Performance bar
+    bar_width = 0.5
+    ax.bar(0.5, level_value, width=bar_width, color='blue', edgecolor='black')
+
+    # Configuration
+    ax.set_xlim(0, 1)
+    ax.set_ylim(positions[0], positions[-1])
+    ax.set_ylabel(f"Level ({unit})")
+    ax.set_title(f"{test_name} Performance")
+    ax.set_xticks([0.5])
+    ax.set_xticklabels([test_name])
+
+    # Value label
+    ax.text(0.5, level_value + 0.1, f"{level_value:.1f}", ha='center', fontweight='bold')
+
+    # Zone labels (Poor to Excellent, bottom to top)
+    ax.text(0.90, 16.0, "Below Average", fontsize=9, ha='right')
+    ax.text(0.90, 17.5, "Average", fontsize=9, ha='right')
+    ax.text(0.90, 18.5, "Good", fontsize=9, ha='right')
+    ax.text(0.90, 20.0, "Excellent", fontsize=9, ha='right')
+
+    plt.tight_layout()
+
+    # Save to BytesIO
+    img_data = io.BytesIO()
+    plt.savefig(img_data, format='png', dpi=150, bbox_inches="tight")
+    img_data.seek(0)
+    plt.close(fig)
+
+    return img_data
+
+def create_stop_go_chart(time_value, test_name="Stop & Go", unit="s"):
+    """
+    Stop & Go test chart (lower is better).
+
+    Performance zones:
+    - ≤4.54s: Excellent (Green)
+    - 4.55-4.65: Good (Yellow)
+    - 4.66-4.79: Average (Orange)
+    - ≥4.80s: Below Average (Red)
+
+    Args:
+        time_value (float): Stop & Go time in seconds
+        test_name (str): Name for chart title
+        unit (str): Unit label
+
+    Returns:
+        BytesIO: Image buffer
+    """
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    # Lower is better → green bottom, red top (like Sprint)
+    colors = [(0, 0.8, 0), (0.9, 0.9, 0), (1, 0.5, 0), (0.8, 0, 0)]
+    positions = [4.40, 4.54, 4.65, 4.79, 5.00]
+
+    # Draw zones
+    for i in range(len(colors)):
+        height = positions[i+1] - positions[i]
+        rect = Rectangle((0, positions[i]), 1, height, color=colors[i], alpha=0.3)
+        ax.add_patch(rect)
+
+    # Performance bar
+    bar_width = 0.5
+    ax.bar(0.5, time_value, width=bar_width, color='blue', edgecolor='black')
+
+    # Configuration
+    ax.set_xlim(0, 1)
+    ax.set_ylim(positions[0], positions[-1])
+    ax.set_ylabel(f"Time ({unit})")
+    ax.set_title(f"{test_name} Performance")
+    ax.set_xticks([0.5])
+    ax.set_xticklabels([test_name])
+
+    # Value label
+    ax.text(0.5, time_value + 0.02, f"{time_value:.2f}", ha='center', fontweight='bold')
+
+    # Zone labels (Excellent to Poor, bottom to top)
+    ax.text(0.90, 4.47, "Excellent", fontsize=9, ha='right')
+    ax.text(0.90, 4.60, "Good", fontsize=9, ha='right')
+    ax.text(0.90, 4.72, "Average", fontsize=9, ha='right')
+    ax.text(0.90, 4.89, "Below Average", fontsize=9, ha='right')
+
+    plt.tight_layout()
+
+    # Save to BytesIO
+    img_data = io.BytesIO()
+    plt.savefig(img_data, format='png', dpi=150, bbox_inches="tight")
+    img_data.seek(0)
+    plt.close(fig)
+
+    return img_data
+
 def create_athlete_report(athlete_name, weight, height, sprint_time, sprint_30m_time, jump_height, output_filename=None, output_dir=None):
     """
     Create a comprehensive PDF report for an athlete with personal info and performance charts

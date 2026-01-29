@@ -59,6 +59,7 @@ docker-compose.yml
 reports/
 *.pdf
 
-# Data files (keep sample_athletes.csv, ignore others)
+# Data files (keep sample CSV files, ignore others)
 *.csv
 !sample_athletes.csv
+!sample_athletes_in_season.csv

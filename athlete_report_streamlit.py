@@ -33,22 +33,39 @@ from athlete_report import (
     create_sprint_chart,
     create_sprint_30m_chart,
     create_jump_chart,
-    create_wattbike_chart
+    create_wattbike_chart,
+    create_yoyo_chart,      # NEW
+    create_stop_go_chart    # NEW
 )
 
 # Season configuration
 SEASON_CONFIG = {
     "OFF Season": {
-        "required_columns": ['Name', 'Weight', 'Height', 'Sprint', 'Sprint_30m', 'CMJ'],
-        "numeric_columns": ['Weight', 'Height', 'Sprint', 'Sprint_30m', 'CMJ'],
-        "charts": ['sprint_10m', 'sprint_30m', 'cmj'],
-        "description": "Complete performance assessment with sprints and jump testing"
+        "required_columns": ['Name'],  # ONLY Name is required
+        "optional_columns": {
+            # Anthropometric
+            "Weight": {"numeric": True, "unit": "kg"},
+            "Height": {"numeric": True, "unit": "cm"},
+            # Performance tests
+            "Sprint": {"numeric": True, "unit": "s", "chart": "sprint_10m"},
+            "Sprint_30m": {"numeric": True, "unit": "s", "chart": "sprint_30m"},
+            "CMJ": {"numeric": True, "unit": "cm", "chart": "cmj"},
+            "Yoyo": {"numeric": True, "unit": "level", "chart": "yoyo"},
+            "StopGo": {"numeric": True, "unit": "s", "chart": "stop_go"}
+        },
+        "description": "Performance assessment with all tests optional"
     },
     "IN Season": {
-        "required_columns": ['Name', 'Weight', 'Height', 'CMJ', 'Wattbike_6s'],
-        "numeric_columns": ['Weight', 'Height', 'CMJ', 'Wattbike_6s'],
-        "charts": ['cmj', 'wattbike'],
-        "description": "In-season monitoring with jump and power testing"
+        "required_columns": ['Name'],  # ONLY Name is required
+        "optional_columns": {
+            # Anthropometric
+            "Weight": {"numeric": True, "unit": "kg"},
+            "Height": {"numeric": True, "unit": "cm"},
+            # Performance tests
+            "CMJ": {"numeric": True, "unit": "cm", "chart": "cmj"},
+            "Wattbike_6s": {"numeric": True, "unit": "W", "chart": "wattbike"}
+        },
+        "description": "In-season monitoring with all tests optional"
     }
 }
 
@@ -128,13 +145,14 @@ st.markdown("""
 
 # No need for a temporary directory anymore as we're using in-memory buffers
 
-def build_pdf_story(athlete, season_type):
+def build_pdf_story(athlete, season_type, available_columns):
     """
-    Build ReportLab story elements for PDF based on season type.
+    Build ReportLab story elements for PDF based on season type and available data.
 
     Args:
         athlete (dict): Athlete data
         season_type (str): "OFF Season" or "IN Season"
+        available_columns (dict): Which columns are available
 
     Returns:
         list: ReportLab story elements
@@ -164,12 +182,20 @@ def build_pdf_story(athlete, season_type):
     story.append(title)
     story.append(Spacer(1, 0.3*inch))
 
-    # Athlete info table
-    athlete_data = [
-        ["Name:", str(athlete['Name'])],
-        ["Weight:", f"{athlete['Weight']} kg"],
-        ["Height:", f"{athlete['Height']} cm"],
-    ]
+    # Build dynamic athlete info table
+    athlete_data = [["Name:", str(athlete['Name'])]]
+
+    if available_columns.get('Weight', False):
+        athlete_data.append(["Weight:", f"{athlete['Weight']} kg"])
+
+    if available_columns.get('Height', False):
+        athlete_data.append(["Height:", f"{athlete['Height']} cm"])
+
+    # Add BMI if both Weight and Height available
+    if available_columns.get('Weight', False) and available_columns.get('Height', False):
+        height_m = float(athlete['Height']) / 100
+        bmi = float(athlete['Weight']) / (height_m ** 2)
+        athlete_data.append(["BMI:", f"{bmi:.1f}"])
 
     athlete_table = Table(athlete_data, colWidths=[1.5*inch, 4*inch])
     athlete_table.setStyle(TableStyle([
@@ -183,85 +209,149 @@ def build_pdf_story(athlete, season_type):
     story.append(athlete_table)
     story.append(Spacer(1, 0.5*inch))
 
-    # Add charts based on season
+    # Track if any charts were added
+    charts_added = False
+
+    # Add charts based on season and available data
     if season_type == "OFF Season":
         # 10m Sprint
-        sprint_img_data = create_sprint_chart(float(athlete['Sprint']))
-        sprint_img = Image(sprint_img_data, width=5*inch, height=3.5*inch)
-        story.append(sprint_img)
-        story.append(Spacer(1, 0.3*inch))
+        if available_columns.get('Sprint', False):
+            sprint_img_data = create_sprint_chart(float(athlete['Sprint']))
+            sprint_img = Image(sprint_img_data, width=5*inch, height=3.5*inch)
+            story.append(sprint_img)
+            story.append(Spacer(1, 0.3*inch))
+            charts_added = True
 
         # 30m Sprint
-        sprint_30m_img_data = create_sprint_30m_chart(float(athlete['Sprint_30m']))
-        sprint_30m_img = Image(sprint_30m_img_data, width=5*inch, height=3.5*inch)
-        story.append(sprint_30m_img)
-        story.append(Spacer(1, 0.3*inch))
+        if available_columns.get('Sprint_30m', False):
+            sprint_30m_img_data = create_sprint_30m_chart(float(athlete['Sprint_30m']))
+            sprint_30m_img = Image(sprint_30m_img_data, width=5*inch, height=3.5*inch)
+            story.append(sprint_30m_img)
+            story.append(Spacer(1, 0.3*inch))
+            charts_added = True
 
         # CMJ
-        jump_img_data = create_jump_chart(float(athlete['CMJ']))
-        jump_img = Image(jump_img_data, width=5*inch, height=3.5*inch)
-        story.append(jump_img)
+        if available_columns.get('CMJ', False):
+            jump_img_data = create_jump_chart(float(athlete['CMJ']))
+            jump_img = Image(jump_img_data, width=5*inch, height=3.5*inch)
+            story.append(jump_img)
+            story.append(Spacer(1, 0.3*inch))
+            charts_added = True
+
+        # Yoyo Test
+        if available_columns.get('Yoyo', False):
+            yoyo_img_data = create_yoyo_chart(float(athlete['Yoyo']))
+            yoyo_img = Image(yoyo_img_data, width=5*inch, height=3.5*inch)
+            story.append(yoyo_img)
+            story.append(Spacer(1, 0.3*inch))
+            charts_added = True
+
+        # Stop & Go Test
+        if available_columns.get('StopGo', False):
+            stopgo_img_data = create_stop_go_chart(float(athlete['StopGo']))
+            stopgo_img = Image(stopgo_img_data, width=5*inch, height=3.5*inch)
+            story.append(stopgo_img)
+            charts_added = True
 
     else:  # IN Season
         # CMJ
-        jump_img_data = create_jump_chart(float(athlete['CMJ']))
-        jump_img = Image(jump_img_data, width=5*inch, height=3.5*inch)
-        story.append(jump_img)
-        story.append(Spacer(1, 0.3*inch))
+        if available_columns.get('CMJ', False):
+            jump_img_data = create_jump_chart(float(athlete['CMJ']))
+            jump_img = Image(jump_img_data, width=5*inch, height=3.5*inch)
+            story.append(jump_img)
+            story.append(Spacer(1, 0.3*inch))
+            charts_added = True
 
-        # Wattbike
-        power_per_kg = float(athlete['Wattbike_6s']) / float(athlete['Weight'])
-        wattbike_img_data = create_wattbike_chart(power_per_kg)
-        wattbike_img = Image(wattbike_img_data, width=5*inch, height=3.5*inch)
-        story.append(wattbike_img)
+        # Wattbike (requires both Wattbike_6s and Weight)
+        if available_columns.get('Wattbike_6s', False) and available_columns.get('Weight', False):
+            power_per_kg = float(athlete['Wattbike_6s']) / float(athlete['Weight'])
+            wattbike_img_data = create_wattbike_chart(power_per_kg)
+            wattbike_img = Image(wattbike_img_data, width=5*inch, height=3.5*inch)
+            story.append(wattbike_img)
+            charts_added = True
+
+    # Add note if no charts available
+    if not charts_added:
+        note_style = ParagraphStyle(
+            'Note',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.HexColor('#666666'),
+            alignment=1
+        )
+        note = Paragraph("No performance test data available for this athlete", note_style)
+        story.append(note)
 
     return story
 
-def display_preview_charts(athlete, season_type):
+def display_preview_charts(athlete, season_type, available_columns):
     """
-    Display preview charts for a selected athlete based on season.
+    Display charts dynamically based on available data.
 
     Args:
-        athlete (dict): Athlete data with performance metrics
-        season_type (str): "OFF Season" or "IN Season"
+        athlete (dict): Athlete data
+        season_type (str): Season type
+        available_columns (dict): Which columns are available
     """
+    # Determine which charts to show
+    charts_to_show = []
+    chart_functions = {}
+
     if season_type == "OFF Season":
-        # 3-column layout for OFF Season
-        cols = st.columns(3)
+        # Map column to chart function
+        if available_columns.get('Sprint', False):
+            charts_to_show.append('Sprint')
+            chart_functions['Sprint'] = (create_sprint_chart, float(athlete['Sprint']), "10m Sprint")
 
-        with cols[0]:
-            sprint_img = create_sprint_chart(float(athlete['Sprint']))
-            st.image(sprint_img, caption="10m Sprint Performance")
+        if available_columns.get('Sprint_30m', False):
+            charts_to_show.append('Sprint_30m')
+            chart_functions['Sprint_30m'] = (create_sprint_30m_chart, float(athlete['Sprint_30m']), "30m Sprint")
 
-        with cols[1]:
-            sprint_30m_img = create_sprint_30m_chart(float(athlete['Sprint_30m']))
-            st.image(sprint_30m_img, caption="30m Sprint Performance")
+        if available_columns.get('CMJ', False):
+            charts_to_show.append('CMJ')
+            chart_functions['CMJ'] = (create_jump_chart, float(athlete['CMJ']), "CMJ")
 
-        with cols[2]:
-            jump_img = create_jump_chart(float(athlete['CMJ']))
-            st.image(jump_img, caption="CMJ Performance")
+        if available_columns.get('Yoyo', False):
+            charts_to_show.append('Yoyo')
+            chart_functions['Yoyo'] = (create_yoyo_chart, float(athlete['Yoyo']), "Yoyo Test")
+
+        if available_columns.get('StopGo', False):
+            charts_to_show.append('StopGo')
+            chart_functions['StopGo'] = (create_stop_go_chart, float(athlete['StopGo']), "Stop & Go")
 
     else:  # IN Season
-        # 2-column layout for IN Season
-        cols = st.columns(2)
+        if available_columns.get('CMJ', False):
+            charts_to_show.append('CMJ')
+            chart_functions['CMJ'] = (create_jump_chart, float(athlete['CMJ']), "CMJ")
 
-        with cols[0]:
-            jump_img = create_jump_chart(float(athlete['CMJ']))
-            st.image(jump_img, caption="CMJ Performance")
-
-        with cols[1]:
-            # Calculate W/kg from Wattbike_6s power and weight
+        if available_columns.get('Wattbike_6s', False) and available_columns.get('Weight', False):
             power_per_kg = float(athlete['Wattbike_6s']) / float(athlete['Weight'])
-            wattbike_img = create_wattbike_chart(power_per_kg)
-            st.image(wattbike_img, caption="Wattbike 6s Power Performance")
+            charts_to_show.append('Wattbike')
+            chart_functions['Wattbike'] = (create_wattbike_chart, power_per_kg, "Wattbike 6s")
 
-def generate_pdf_report(athlete, season_type):
+    # If no charts available, show message
+    if not charts_to_show:
+        st.warning("⚠️ No performance test data available for this athlete")
+        return
+
+    # Create dynamic column layout
+    cols = st.columns(len(charts_to_show))
+
+    # Display charts
+    for idx, chart_name in enumerate(charts_to_show):
+        with cols[idx]:
+            chart_func, value, caption = chart_functions[chart_name]
+            img = chart_func(value)
+            st.image(img, caption=f"{caption} Performance")
+
+def generate_pdf_report(athlete, season_type, available_columns):
     """
-    Generate PDF report for an athlete based on season type.
+    Generate PDF report for an athlete based on season type and available data.
 
     Args:
         athlete (dict): Athlete data
         season_type (str): "OFF Season" or "IN Season"
+        available_columns (dict): Which columns are available
 
     Returns:
         BytesIO or None: PDF buffer or None if error
@@ -276,7 +366,7 @@ def generate_pdf_report(athlete, season_type):
             doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
 
             # Build story using helper function
-            story = build_pdf_story(athlete, season_type)
+            story = build_pdf_story(athlete, season_type, available_columns)
 
             # Generate PDF
             doc.build(story)
@@ -290,74 +380,95 @@ def generate_pdf_report(athlete, season_type):
 
 def process_csv(df, season_type):
     """
-    Process and standardize the CSV data based on season type.
+    Process CSV with fully optional columns (only Name required).
 
     Args:
         df (pd.DataFrame): Raw uploaded DataFrame
         season_type (str): "OFF Season" or "IN Season"
 
     Returns:
-        pd.DataFrame or None: Processed DataFrame or None if validation fails
+        tuple: (processed_df, available_columns_dict) or (None, None) if validation fails
+        available_columns_dict: {'Weight': True, 'Sprint': True, 'Yoyo': False, ...}
     """
     config = SEASON_CONFIG[season_type]
-    required_fields = config["required_columns"]
-    numeric_cols = config["numeric_columns"]
+    required_fields = config["required_columns"]  # Just ['Name']
+    optional_fields_config = config["optional_columns"]
 
-    # Case-insensitive column matching
     df_columns_lower = [col.lower() for col in df.columns]
 
-    # Map uploaded columns to expected names
     column_mapping = {}
-    missing_columns = []
+    missing_required = []
+    available_columns = {}
 
+    # Check REQUIRED columns (only Name)
     for field in required_fields:
         try:
             idx = df_columns_lower.index(field.lower())
             column_mapping[df.columns[idx]] = field
         except ValueError:
-            missing_columns.append(field)
+            missing_required.append(field)
 
-    # Error handling: Missing columns
-    if missing_columns:
-        st.error(f"❌ Missing required columns for {season_type}: {', '.join(missing_columns)}")
-        st.info(f"📋 Expected columns: {', '.join(required_fields)}")
-        return None
+    # FAIL if Name is missing
+    if missing_required:
+        st.error(f"❌ Missing required column: Name")
+        return None, None
 
-    # Rename columns for consistency
+    # Detect OPTIONAL columns
+    for field, metadata in optional_fields_config.items():
+        try:
+            idx = df_columns_lower.index(field.lower())
+            column_mapping[df.columns[idx]] = field
+            available_columns[field] = True
+        except ValueError:
+            available_columns[field] = False
+
+    # Info message for available tests
+    available_tests = [col for col, avail in available_columns.items()
+                       if avail and optional_fields_config[col].get("chart")]
+    if available_tests:
+        st.info(f"📊 Available tests: {', '.join(available_tests)}")
+    else:
+        st.warning("⚠️ No performance test data found in CSV. Only athlete names will be displayed.")
+
+    # Rename columns
     df = df.rename(columns=column_mapping)
 
-    # Select only required columns (ignore extra columns)
-    df = df[required_fields]
+    # Select only columns that exist
+    existing_columns = ['Name'] + [col for col, avail in available_columns.items() if avail]
+    df = df[existing_columns]
 
-    # Convert numeric columns
+    # Convert numeric columns (only those that exist and are marked numeric)
+    numeric_cols = [col for col, avail in available_columns.items()
+                    if avail and optional_fields_config[col].get("numeric")]
+
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    # Count invalid rows before dropping
-    invalid_rows = df[df[numeric_cols].isna().any(axis=1)]
-    if len(invalid_rows) > 0:
-        st.warning(f"⚠️ Removed {len(invalid_rows)} rows with invalid numeric data")
+    # Drop rows with invalid numeric data
+    if numeric_cols:
+        invalid_rows = df[df[numeric_cols].isna().any(axis=1)]
+        if len(invalid_rows) > 0:
+            st.warning(f"⚠️ Removed {len(invalid_rows)} rows with invalid data")
 
-    # Drop rows with missing/invalid numeric data
-    df = df.dropna(subset=numeric_cols)
+        df = df.dropna(subset=numeric_cols)
 
-    # Validate data ranges
+    # Validation
     if len(df) == 0:
-        st.error("❌ No valid data rows found after validation")
-        return None
+        st.error("❌ No valid athlete rows found")
+        return None, None
 
-    # Success message
-    st.success(f"✅ Successfully loaded {len(df)} athlete(s) for {season_type}")
+    st.success(f"✅ Loaded {len(df)} athlete(s) for {season_type}")
 
-    return df
+    return df, available_columns
 
-def generate_team_reports(df, season_type):
+def generate_team_reports(df, season_type, available_columns):
     """
     Generate ZIP file containing PDF reports for all athletes.
 
     Args:
         df (pd.DataFrame): Athlete data
         season_type (str): "OFF Season" or "IN Season"
+        available_columns (dict): Which columns are available
 
     Returns:
         BytesIO: ZIP file buffer
@@ -389,7 +500,7 @@ def generate_team_reports(df, season_type):
                 doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
 
                 # Build story using helper function
-                story = build_pdf_story(athlete_dict, season_type)
+                story = build_pdf_story(athlete_dict, season_type, available_columns)
 
                 # Generate PDF
                 doc.build(story)
@@ -445,12 +556,13 @@ def main():
         try:
             # Parse CSV
             df = pd.read_csv(uploaded_file)
-            processed_df = process_csv(df, season_type)
-            
-            if processed_df is not None:
+            processed_df, available_columns = process_csv(df, season_type)
+
+            if processed_df is not None and available_columns is not None:
                 # Store in session state
                 st.session_state['season_type'] = season_type
                 st.session_state['processed_df'] = processed_df
+                st.session_state['available_columns'] = available_columns
 
                 st.divider()
 
@@ -472,27 +584,38 @@ def main():
 
                     athlete = processed_df[processed_df['Name'] == selected_athlete_name].iloc[0].to_dict()
 
-                    # Display athlete info
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Weight", f"{athlete['Weight']} kg")
-                    col2.metric("Height", f"{athlete['Height']} cm")
+                    # Display athlete info (conditionally based on available data)
+                    metrics_to_show = []
 
-                    # Calculate BMI
-                    height_m = float(athlete['Height']) / 100
-                    bmi = float(athlete['Weight']) / (height_m ** 2)
-                    col3.metric("BMI", f"{bmi:.1f}")
+                    if available_columns.get('Weight', False):
+                        metrics_to_show.append(("Weight", f"{athlete['Weight']} kg"))
+
+                    if available_columns.get('Height', False):
+                        metrics_to_show.append(("Height", f"{athlete['Height']} cm"))
+
+                    # Calculate BMI if both Weight and Height available
+                    if available_columns.get('Weight', False) and available_columns.get('Height', False):
+                        height_m = float(athlete['Height']) / 100
+                        bmi = float(athlete['Weight']) / (height_m ** 2)
+                        metrics_to_show.append(("BMI", f"{bmi:.1f}"))
+
+                    # Display metrics dynamically
+                    if metrics_to_show:
+                        cols = st.columns(len(metrics_to_show))
+                        for idx, (label, value) in enumerate(metrics_to_show):
+                            cols[idx].metric(label, value)
 
                     st.divider()
 
                     # Display charts
                     st.subheader("Performance Charts")
-                    display_preview_charts(athlete, season_type)
+                    display_preview_charts(athlete, season_type, available_columns)
 
                     st.divider()
 
                     # Generate PDF button
                     if st.button("📄 Generate PDF Report", type="primary"):
-                        pdf_buffer = generate_pdf_report(athlete, season_type)
+                        pdf_buffer = generate_pdf_report(athlete, season_type, available_columns)
 
                         if pdf_buffer is not None:
                             report_filename = f"{athlete['Name'].replace(' ', '_')}_performance_report.pdf"
@@ -510,7 +633,7 @@ def main():
                     st.write(f"Generate PDF reports for all {len(processed_df)} athletes")
 
                     if st.button("📦 Generate All Reports", type="primary"):
-                        zip_buffer = generate_team_reports(processed_df, season_type)
+                        zip_buffer = generate_team_reports(processed_df, season_type, available_columns)
 
                         st.download_button(
                             label="⬇️ Download All Reports (ZIP)",

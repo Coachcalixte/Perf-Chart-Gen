@@ -33,6 +33,7 @@ COPY athlete_report_streamlit.py .
 COPY athlete_report.py .
 COPY team_report_generator.py .
 COPY sample_athletes.csv .
+COPY sample_athletes_in_season.csv .
 
 # Copy Streamlit configuration
 COPY .streamlit/ .streamlit/
