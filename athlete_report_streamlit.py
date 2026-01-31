@@ -34,8 +34,9 @@ from athlete_report import (
     create_sprint_30m_chart,
     create_jump_chart,
     create_wattbike_chart,
-    create_yoyo_chart,      # NEW
-    create_stop_go_chart    # NEW
+    create_yoyo_chart,
+    create_stop_go_chart,
+    create_broad_jump_chart
 )
 
 # Season configuration
@@ -50,6 +51,7 @@ SEASON_CONFIG = {
             "Sprint": {"numeric": True, "unit": "s", "chart": "sprint_10m"},
             "Sprint_30m": {"numeric": True, "unit": "s", "chart": "sprint_30m"},
             "CMJ": {"numeric": True, "unit": "cm", "chart": "cmj"},
+            "BroadJump": {"numeric": True, "unit": "cm", "chart": "broad_jump"},
             "Yoyo": {"numeric": True, "unit": "level", "chart": "yoyo"},
             "StopGo": {"numeric": True, "unit": "s", "chart": "stop_go"}
         },
@@ -238,6 +240,14 @@ def build_pdf_story(athlete, season_type, available_columns):
             story.append(Spacer(1, 0.3*inch))
             charts_added = True
 
+        # Broad Jump
+        if available_columns.get('BroadJump', False):
+            broad_jump_img_data = create_broad_jump_chart(float(athlete['BroadJump']))
+            broad_jump_img = Image(broad_jump_img_data, width=5*inch, height=3.5*inch)
+            story.append(broad_jump_img)
+            story.append(Spacer(1, 0.3*inch))
+            charts_added = True
+
         # Yoyo Test
         if available_columns.get('Yoyo', False):
             yoyo_img_data = create_yoyo_chart(float(athlete['Yoyo']))
@@ -310,6 +320,10 @@ def display_preview_charts(athlete, season_type, available_columns):
         if available_columns.get('CMJ', False):
             charts_to_show.append('CMJ')
             chart_functions['CMJ'] = (create_jump_chart, float(athlete['CMJ']), "CMJ")
+
+        if available_columns.get('BroadJump', False):
+            charts_to_show.append('BroadJump')
+            chart_functions['BroadJump'] = (create_broad_jump_chart, float(athlete['BroadJump']), "Broad Jump")
 
         if available_columns.get('Yoyo', False):
             charts_to_show.append('Yoyo')
@@ -422,6 +436,8 @@ def find_matching_column(target_field, df_columns):
         variations.extend(['stopgo', 'stop_go', 'stop_and_go', 'stop__go'])
     elif target_field == 'Yoyo':
         variations.extend(['yoyo', 'yo_yo', 'yoyo_test'])
+    elif target_field == 'BroadJump':
+        variations.extend(['broadjump', 'broad_jump', 'long_jump', 'longjump'])
 
     # Check each column in the dataframe
     for col in df_columns:
