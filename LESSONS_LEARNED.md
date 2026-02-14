@@ -23,7 +23,7 @@ Development of a Streamlit web application for generating athlete performance re
 - Used metadata-rich `optional_columns` dictionary with `numeric`, `unit`, and `chart` metadata
 - `process_csv()` returns tuple: `(dataframe, available_columns_dict)`
 - All display and PDF functions check `available_columns` before rendering
-- Dynamic UI adapts to show 0-5 charts based on available data
+- Dynamic UI adapts to show 0-6 charts based on available data
 
 **Benefits**:
 - Zero data loss - never drop athletes with partial data
@@ -376,9 +376,37 @@ Using Pandas instead of CSV module:
 
 ## Security & Privacy
 
+### Security Module Implementation
+Created a dedicated `security.py` module with comprehensive protection:
+
+**Input Validation & Sanitization:**
+- CSV injection prevention (formulas: `=`, `@`, `+`, `-`)
+- XSS prevention (`<script`, `javascript:`, `data:`)
+- Command injection prevention (`|`, `;`)
+- File size limits (10MB max)
+- Row limits (500 athletes max)
+- Cell length limits (200 characters)
+
+**Rate Limiting:**
+- Session-based rate limiting using Streamlit session state
+- Per-action limits: uploads (20/hr), PDFs (50/hr), team reports (5/hr)
+- Graceful degradation with user-friendly warnings
+
+**Usage Logging:**
+- Anonymous session tracking (hashed session IDs)
+- Event logging: uploads, PDF generations, errors
+- Privacy-first: No athlete names logged
+- JSON format for easy parsing
+
+**Email Collection:**
+- Optional sidebar form
+- Email validation (format + typo detection)
+- Consent-based storage
+- Secure file storage
+
 ### Data Handling
-- **No persistent storage**: Data exists only in session
-- **No logging of user data**: Logs contain no PII
+- **No persistent storage**: Uploaded data exists only in session
+- **Anonymous logging**: Usage logs contain no PII
 - **Session isolation**: Each user's data separate
 - **Auto cleanup**: Data cleared when session ends
 
@@ -386,6 +414,14 @@ Using Pandas instead of CSV module:
 - Run as non-root user (implicit in python:3.11-slim)
 - Minimal base image (only Python and dependencies)
 - No exposed secrets or API keys
+- Logs directory created at container startup
+
+### Lessons Learned from Security Implementation
+1. **Defense in depth**: Multiple layers (app + potential Cloudflare)
+2. **Graceful rate limiting**: Warn users, don't just block
+3. **Privacy by design**: Hash/anonymize everything possible
+4. **Separate security module**: Easier to audit and maintain
+5. **Configurable limits**: Easy to adjust without code changes
 
 ---
 
@@ -421,6 +457,8 @@ Using Pandas instead of CSV module:
 3. **Flexible parsing**: Handle variations in user input
 4. **Dynamic UI**: Adapt to data, don't force fixed layouts
 5. **Metadata-driven config**: Easier to extend than hardcoded logic
+6. **Security as a module**: Separate security code for easy auditing
+7. **Rate limiting early**: Prevent abuse before it becomes a problem
 
 ### Process
 1. **Iterate based on feedback**: User's real CSV revealed column name issues
@@ -446,12 +484,19 @@ This project demonstrated the importance of:
 - **User-centric design** that adapts to what users provide
 - **Robust error handling** that guides users to success
 - **Clean architecture** that's easy to extend and maintain
+- **Security from the start**: Rate limiting, validation, and logging
 
-The transition from rigid schema validation to flexible optional columns was the most impactful change, transforming the app from "works with perfect data" to "works with real data."
+The transition from rigid schema validation to flexible optional columns was the most impactful change, transforming the app from "works with perfect data" to "works with real data." The security module provides a solid foundation for production deployment and future membership integration.
 
 ---
 
-**Date**: 2026-01-29
-**Author**: Coach Calixte with Claude Sonnet 4.5
+**Last Updated**: 2026-02-14
+**Author**: Coach Calixte with Claude Code
 **Project**: Athlete Performance Report Generator
 **Repository**: https://github.com/Coachcalixte/Perf-Chart-Gen
+
+### Change History
+| Date | Changes |
+|------|---------|
+| 2026-01-29 | Initial lessons learned document |
+| 2026-02-14 | Added Broad Jump test, security implementation, updated to 6 OFF Season tests |

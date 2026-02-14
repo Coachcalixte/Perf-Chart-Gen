@@ -10,7 +10,7 @@ A Streamlit web application that helps coaches and sports professionals generate
 - **Upload CSV Data**: Easily upload athlete performance data in CSV format with flexible column name recognition
 - **Fully Optional Tests**: Only athlete name is required - all tests are optional and handled gracefully
 - **Interactive Visualizations**: View color-coded performance charts for key metrics
-- **Dynamic Chart Generation**: Charts appear automatically based on available data (0-5 charts for OFF Season)
+- **Dynamic Chart Generation**: Charts appear automatically based on available data (0-6 charts for OFF Season)
 - **Individual Reports**: Generate detailed PDF reports for individual athletes
 - **Team Reports**: Batch generate reports for the entire team in a ZIP archive
 - **Responsive Interface**: User-friendly interface that works on desktop and mobile devices
@@ -31,7 +31,8 @@ The application supports comprehensive performance assessment with the following
 **Optional Performance Tests:**
 - **10m Sprint Time**: Measures acceleration capability (seconds)
 - **30m Sprint Time**: Measures top-end speed capability (seconds)
-- **Counter Movement Jump (CMJ)**: Measures lower body power (centimeters)
+- **Counter Movement Jump (CMJ)**: Measures vertical jump power (centimeters)
+- **Broad Jump**: Measures horizontal jump power (centimeters)
 - **Yoyo Test**: Measures aerobic endurance (level reached, typically 17.0-21.0+)
 - **Stop & Go Test**: Measures change of direction speed (seconds)
 
@@ -84,6 +85,7 @@ All other columns are optional. Include only the tests your athletes completed:
 - `Sprint` - 10m sprint time in seconds (e.g., `Sprint (sec)`)
 - `Sprint_30m` - 30m sprint time in seconds (e.g., `Sprint 30m (sec)`)
 - `CMJ` - Counter Movement Jump in centimeters (e.g., `CMJ (cm)`)
+- `BroadJump` - Broad/Long Jump in centimeters (e.g., `Long Jump (m)`)
 - `Yoyo` - Yoyo test level (e.g., `Yo-Yo test (level)`)
 - `StopGo` - Stop & Go test in seconds (e.g., `Stop & Go (5-10-5) (sec)`)
 
@@ -97,9 +99,9 @@ All other columns are optional. Include only the tests your athletes completed:
 
 **Full OFF Season Data:**
 ```csv
-Name,Weight (Kg),Height (cm),Sprint (sec),Sprint 30m (sec),CMJ (cm),Yo-Yo test (level),Stop & Go (sec)
-John Doe,80,185,1.82,4.30,51.5,19.2,4.52
-Jane Smith,65,170,1.90,5.00,48.2,17.5,4.68
+Name,Weight (Kg),Height (cm),Sprint (sec),Sprint 30m (sec),CMJ (cm),Broad Jump (cm),Yo-Yo test (level),Stop & Go (sec)
+John Doe,80,185,1.82,4.30,51.5,272,19.2,4.52
+Jane Smith,65,170,1.90,5.00,48.2,258,17.5,4.68
 ```
 
 **Partial OFF Season Data (missing some tests):**
@@ -139,6 +141,12 @@ The application uses color-coded performance zones for all metrics:
 - **Good** (Yellow): 45cm - 52cm
 - **Average** (Orange): 38cm - 45cm
 - **Below Average** (Red): < 38cm
+
+### Broad Jump (centimeters) - Higher is Better
+- **Excellent** (Green): ≥ 270cm
+- **Good** (Yellow): 260cm - 269cm
+- **Average** (Orange): 250cm - 259cm
+- **Below Average** (Red): < 250cm
 
 ### Yoyo Test (level) - Higher is Better
 - **Excellent** (Green): 19.1+

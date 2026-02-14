@@ -193,8 +193,9 @@ For security concerns or to report vulnerabilities:
 
 | Date | Change |
 |------|--------|
-| 2024-02-14 | Initial security implementation |
+| 2026-02-14 | Initial security implementation |
 | | - CSV validation and sanitization |
 | | - Rate limiting (uploads, PDFs, team reports) |
 | | - Usage logging |
+| | - Optional email collection |
 | | - Optional email collection |
