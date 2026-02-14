@@ -13,6 +13,7 @@ A Streamlit web application that helps coaches and sports professionals generate
 - **Dynamic Chart Generation**: Charts appear automatically based on available data (0-6 charts for OFF Season)
 - **Individual Reports**: Generate detailed PDF reports for individual athletes
 - **Team Reports**: Batch generate reports for the entire team in a ZIP archive
+- **Email-Gated Downloads**: Free preview on screen; email required for PDF downloads (lead generation)
 - **Responsive Interface**: User-friendly interface that works on desktop and mobile devices
 - **Flexible CSV Format**: Automatically recognizes column names with units (e.g., "Weight (Kg)", "Sprint 30m (sec)")
 

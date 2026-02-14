@@ -398,11 +398,11 @@ Created a dedicated `security.py` module with comprehensive protection:
 - Privacy-first: No athlete names logged
 - JSON format for easy parsing
 
-**Email Collection:**
-- Optional sidebar form
-- Email validation (format + typo detection)
-- Consent-based storage
-- Secure file storage
+**Email Gate (Lead Generation):**
+- Free preview on screen, email required for PDF downloads
+- Multi-layer validation: format, MX records, disposable blocking, typo suggestions
+- Consent checkbox for marketing communications
+- Secure file storage in `logs/collected_emails.json`
 
 ### Data Handling
 - **No persistent storage**: Uploaded data exists only in session

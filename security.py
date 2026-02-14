@@ -155,36 +155,138 @@ def validate_csv_security(df: pd.DataFrame, file_size_bytes: int) -> Tuple[bool,
     return True, "", df
 
 
-def validate_email(email: str) -> Tuple[bool, str]:
+# Disposable email domains blocklist (common temporary email services)
+DISPOSABLE_EMAIL_DOMAINS = {
+    # Popular disposable email services
+    'mailinator.com', 'guerrillamail.com', 'tempmail.com', 'throwaway.email',
+    '10minutemail.com', 'temp-mail.org', 'fakeinbox.com', 'trashmail.com',
+    'mailnesia.com', 'tempail.com', 'dispostable.com', 'mailcatch.com',
+    'yopmail.com', 'sharklasers.com', 'guerrillamail.info', 'grr.la',
+    'guerrillamail.biz', 'guerrillamail.de', 'guerrillamail.net',
+    'guerrillamail.org', 'spam4.me', 'getairmail.com', 'throwawaymail.com',
+    'getnada.com', 'tempinbox.com', 'emailondeck.com', 'fakemailgenerator.com',
+    'mailforspam.com', 'tempr.email', 'discard.email', 'discardmail.com',
+    'spamgourmet.com', 'mytrashmail.com', 'mt2009.com', 'thankyou2010.com',
+    'spam.la', 'speed.1s.fr', 'spamfree24.org', 'spamfree24.de',
+    'spamfree24.eu', 'spamfree24.info', 'spamfree24.net', 'wegwerfmail.de',
+    'wegwerfmail.net', 'wegwerfmail.org', 'meltmail.com', 'mintemail.com',
+    'tempmailaddress.com', 'burnermail.io', 'maildrop.cc', 'inboxalias.com',
+}
+
+# Common typos and their corrections
+EMAIL_TYPO_CORRECTIONS = {
+    'gamil.com': 'gmail.com',
+    'gmial.com': 'gmail.com',
+    'gmal.com': 'gmail.com',
+    'gmail.co': 'gmail.com',
+    'gmaill.com': 'gmail.com',
+    'gnail.com': 'gmail.com',
+    'gmail.cm': 'gmail.com',
+    'gmail.om': 'gmail.com',
+    'hotmal.com': 'hotmail.com',
+    'hotmai.com': 'hotmail.com',
+    'hotmil.com': 'hotmail.com',
+    'hotmail.co': 'hotmail.com',
+    'outlok.com': 'outlook.com',
+    'outloo.com': 'outlook.com',
+    'outlook.co': 'outlook.com',
+    'yaho.com': 'yahoo.com',
+    'yahooo.com': 'yahoo.com',
+    'yahoo.co': 'yahoo.com',
+    'yahoomail.com': 'yahoo.com',
+    'iclud.com': 'icloud.com',
+    'icoud.com': 'icloud.com',
+    'icloud.co': 'icloud.com',
+}
+
+
+def check_mx_record(domain: str) -> bool:
     """
-    Validate email address format.
+    Check if a domain has valid MX (mail exchange) records.
+
+    Args:
+        domain: Email domain to check
+
+    Returns:
+        True if domain has MX records, False otherwise
+    """
+    import socket
+    try:
+        # Try to resolve MX records
+        socket.setdefaulttimeout(3)  # 3 second timeout
+        socket.getaddrinfo(domain, None)
+        return True
+    except (socket.gaierror, socket.timeout):
+        return False
+
+
+def validate_email(email: str) -> Tuple[bool, str, Optional[str]]:
+    """
+    Validate email address with comprehensive checks.
+
+    Performs:
+    1. Format validation
+    2. Domain existence check (MX records)
+    3. Disposable email blocking
+    4. Common typo detection with suggestions
 
     Args:
         email: Email address to validate
 
     Returns:
-        Tuple of (is_valid, error_message)
+        Tuple of (is_valid, error_message, suggestion)
+        - is_valid: True if email passes all checks
+        - error_message: Error description if invalid
+        - suggestion: Suggested correction for typos (or None)
     """
     if not email:
-        return False, "Email is required"
+        return False, "Email is required", None
 
-    # Basic email regex pattern
-    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-
-    if not re.match(email_pattern, email):
-        return False, "Invalid email format"
-
-    # Check for common typos
-    suspicious_domains = ['gamil.com', 'gmial.com', 'gmal.com', 'hotmal.com', 'yaho.com']
-    domain = email.split('@')[-1].lower()
-    if domain in suspicious_domains:
-        return False, f"Did you mean a different email? '{domain}' looks like a typo"
+    email = email.strip().lower()
 
     # Check length
     if len(email) > 254:
-        return False, "Email address too long"
+        return False, "Email address too long", None
 
-    return True, ""
+    # Basic format validation
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, email):
+        return False, "Invalid email format. Please check for typos.", None
+
+    # Extract domain
+    try:
+        local_part, domain = email.rsplit('@', 1)
+    except ValueError:
+        return False, "Invalid email format", None
+
+    # Check for empty local part
+    if not local_part:
+        return False, "Invalid email format", None
+
+    # Check for common typos and suggest corrections
+    if domain in EMAIL_TYPO_CORRECTIONS:
+        correct_domain = EMAIL_TYPO_CORRECTIONS[domain]
+        suggestion = f"{local_part}@{correct_domain}"
+        return False, f"Did you mean {suggestion}?", suggestion
+
+    # Block disposable email services
+    if domain in DISPOSABLE_EMAIL_DOMAINS:
+        return False, "Temporary email addresses are not allowed. Please use your regular email.", None
+
+    # Check if domain exists (has MX records)
+    if not check_mx_record(domain):
+        return False, f"The domain '{domain}' doesn't appear to exist. Please check your email address.", None
+
+    return True, "", None
+
+
+def validate_email_simple(email: str) -> Tuple[bool, str]:
+    """
+    Simple wrapper for validate_email that returns just (is_valid, error_message).
+    For backwards compatibility.
+    """
+    is_valid, error_msg, _ = validate_email(email)
+    return is_valid, error_msg
 
 
 # =============================================================================

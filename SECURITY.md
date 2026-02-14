@@ -47,12 +47,21 @@ All significant events are logged to `logs/app.log`:
 - Session IDs are anonymized hashes
 - Email addresses are hashed in logs
 
-### 4. Email Collection
+### 4. Email Collection (Required for PDF Downloads)
 
-- Optional email collection in sidebar
-- Email validation (format, common typos)
-- Consent checkbox required
+**Business Model:**
+- **Free**: Upload CSV, view charts on screen
+- **Email Required**: Download PDF reports (individual or team)
+
+**Email Validation (Multi-Layer):**
+- Format validation (regex)
+- Domain existence check (MX records)
+- Disposable email blocking (50+ services blocked)
+- Common typo detection with suggestions (e.g., "gamil.com" → "gmail.com")
+
+**Storage:**
 - Stored securely in `logs/collected_emails.json`
+- Consent checkbox for marketing communications
 - Not exposed via any API
 
 ## Configuration
@@ -197,5 +206,5 @@ For security concerns or to report vulnerabilities:
 | | - CSV validation and sanitization |
 | | - Rate limiting (uploads, PDFs, team reports) |
 | | - Usage logging |
-| | - Optional email collection |
-| | - Optional email collection |
+| | - Email gate for PDF downloads (required) |
+| | - Multi-layer email validation (format, MX, disposable blocking, typo detection) |
