@@ -31,6 +31,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY athlete_report_streamlit.py .
 COPY athlete_report.py .
+COPY security.py .
 COPY team_report_generator.py .
 COPY sample_athletes.csv .
 COPY sample_athletes_in_season.csv .
@@ -38,8 +39,8 @@ COPY sample_athletes_in_season.csv .
 # Copy Streamlit configuration
 COPY .streamlit/ .streamlit/
 
-# Create directory for generated reports
-RUN mkdir -p /app/reports
+# Create directories for generated reports and logs
+RUN mkdir -p /app/reports /app/logs
 
 # Expose Streamlit default port
 EXPOSE 8501

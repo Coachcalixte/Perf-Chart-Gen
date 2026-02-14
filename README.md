@@ -200,16 +200,33 @@ The app is designed to work embedded in WordPress via iframe:
 
 - `athlete_report_streamlit.py`: Main Streamlit application file
 - `athlete_report.py`: Module for creating visualizations and PDF reports
+- `security.py`: Security module (validation, rate limiting, logging)
 - `team_report_generator.py`: Script for batch generating team reports
 - `requirements.txt`: Required Python dependencies
+- `SECURITY.md`: Detailed security documentation
 
 ## Privacy and Security
 
+### Data Protection
 Data uploaded through the web interface is:
 - Processed in-memory only, not saved to persistent storage
 - Available only during your active session
 - Not accessible to other users
 - Automatically cleared when sessions end or the app restarts
+
+### Security Features
+- **Input Validation**: CSV files are sanitized to prevent injection attacks
+- **Rate Limiting**: Prevents abuse (20 uploads/hour, 50 PDFs/hour per session)
+- **Usage Logging**: Anonymous logging for monitoring (no athlete names stored)
+- **File Size Limits**: Maximum 10MB per CSV, 500 athletes per file
+
+### Recommended Production Setup
+For production deployments, we recommend:
+- **Cloudflare**: DDoS protection, WAF, and SSL (free tier available)
+- **Authentication**: Integrate with WordPress membership for access control
+- **Monitoring**: Use Coolify metrics or external monitoring tools
+
+See [SECURITY.md](SECURITY.md) for detailed security documentation.
 
 ## Contributing
 

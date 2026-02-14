@@ -54,10 +54,14 @@ docker-compose.yml
 .env
 .env.local
 *.log
+logs/
 
 # Reports (will be generated inside container)
 reports/
 *.pdf
+
+# Collected data (sensitive)
+collected_emails.json
 
 # Data files (keep sample CSV files, ignore others)
 *.csv

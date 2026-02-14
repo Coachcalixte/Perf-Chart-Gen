@@ -39,6 +39,24 @@ from athlete_report import (
     create_broad_jump_chart
 )
 
+# Import security module
+from security import (
+    validate_csv_security,
+    validate_email,
+    check_upload_limit,
+    check_pdf_limit,
+    check_team_report_limit,
+    record_upload,
+    record_pdf,
+    record_team_report,
+    log_upload,
+    log_pdf_generation,
+    log_team_report,
+    log_error,
+    save_email,
+    get_session_id
+)
+
 # Season configuration
 SEASON_CONFIG = {
     "OFF Season": {
@@ -597,6 +615,39 @@ def main():
     # Title
     st.title("🏃‍♂️ Athlete Performance Reports")
 
+    # Initialize session ID for tracking
+    get_session_id(st.session_state)
+
+    # === SIDEBAR: Optional Email Collection ===
+    with st.sidebar:
+        st.header("Stay Updated")
+
+        # Check if email already submitted this session
+        if st.session_state.get('email_submitted', False):
+            st.success("Thanks for subscribing!")
+        else:
+            st.write("Get notified about new features and performance tips.")
+
+            with st.form("email_form"):
+                email = st.text_input("Email address (optional)", placeholder="your@email.com")
+                consent = st.checkbox("I agree to receive occasional updates", value=True)
+                submitted = st.form_submit_button("Subscribe")
+
+                if submitted and email:
+                    is_valid, error_msg = validate_email(email)
+                    if is_valid:
+                        if save_email(email, st.session_state, consent):
+                            st.session_state['email_submitted'] = True
+                            st.success("Thanks! You're subscribed.")
+                            st.rerun()
+                        else:
+                            st.error("Could not save email. Please try again.")
+                    else:
+                        st.error(error_msg)
+
+        st.divider()
+        st.caption("Your data is processed securely and never shared.")
+
     # === STEP 1: Season Selection ===
     st.subheader("1️⃣ Select Season Type")
     season_type = st.radio(
@@ -656,6 +707,13 @@ def main():
 
     # === STEP 2: File Upload ===
     st.subheader("2️⃣ Upload Athlete Data")
+
+    # Check rate limit before showing uploader
+    upload_allowed, upload_error = check_upload_limit(st.session_state)
+    if not upload_allowed:
+        st.error(f"⏱️ {upload_error}")
+        st.stop()
+
     uploaded_file = st.file_uploader(
         f"Upload CSV file for {season_type}",
         type=["csv"]
@@ -663,8 +721,22 @@ def main():
 
     if uploaded_file is not None:
         try:
+            # Get file size for security validation
+            file_size = uploaded_file.size
+
             # Parse CSV
             df = pd.read_csv(uploaded_file)
+
+            # Security validation
+            is_valid, security_error, df = validate_csv_security(df, file_size)
+            if not is_valid:
+                st.error(f"🔒 Security check failed: {security_error}")
+                log_error(st.session_state, "csv_security", security_error)
+                st.stop()
+
+            # Record the upload for rate limiting
+            record_upload(st.session_state)
+
             processed_df, available_columns = process_csv(df, season_type)
 
             if processed_df is not None and available_columns is not None:
@@ -672,6 +744,10 @@ def main():
                 st.session_state['season_type'] = season_type
                 st.session_state['processed_df'] = processed_df
                 st.session_state['available_columns'] = available_columns
+
+                # Log the successful upload
+                available_tests = [col for col, avail in available_columns.items() if avail]
+                log_upload(st.session_state, season_type, len(processed_df), available_tests)
 
                 st.divider()
 
@@ -723,10 +799,15 @@ def main():
                     st.divider()
 
                     # Generate PDF button
-                    if st.button("📄 Generate PDF Report", type="primary"):
+                    pdf_allowed, pdf_error = check_pdf_limit(st.session_state)
+                    if not pdf_allowed:
+                        st.warning(f"⏱️ {pdf_error}")
+                    elif st.button("📄 Generate PDF Report", type="primary"):
+                        record_pdf(st.session_state)
                         pdf_buffer = generate_pdf_report(athlete, season_type, available_columns)
 
                         if pdf_buffer is not None:
+                            log_pdf_generation(st.session_state, athlete['Name'], season_type)
                             report_filename = f"{athlete['Name'].replace(' ', '_')}_performance_report.pdf"
 
                             st.download_button(
@@ -741,9 +822,14 @@ def main():
                     st.header("Team Reports")
                     st.write(f"Generate PDF reports for all {len(processed_df)} athletes")
 
-                    if st.button("📦 Generate All Reports", type="primary"):
+                    team_allowed, team_error = check_team_report_limit(st.session_state)
+                    if not team_allowed:
+                        st.warning(f"⏱️ {team_error}")
+                    elif st.button("📦 Generate All Reports", type="primary"):
+                        record_team_report(st.session_state)
                         zip_buffer = generate_team_reports(processed_df, season_type, available_columns)
 
+                        log_team_report(st.session_state, len(processed_df), season_type)
                         st.download_button(
                             label="⬇️ Download All Reports (ZIP)",
                             data=zip_buffer,
