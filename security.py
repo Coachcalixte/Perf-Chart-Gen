@@ -15,25 +15,39 @@ import os
 import json
 import hashlib
 import logging
+from logging.handlers import RotatingFileHandler
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any
 import pandas as pd
 
-# Configure logging
+# Configure logging with rotation
 LOG_DIR = Path(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
-# Setup logger
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOG_DIR / "app.log"),
-        logging.StreamHandler()
-    ]
-)
+# Log rotation settings
+LOG_MAX_BYTES = 5 * 1024 * 1024  # 5 MB per log file
+LOG_BACKUP_COUNT = 3             # Keep 3 backup files (total ~20 MB max)
+
+# Setup logger with rotating file handler
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Avoid duplicate handlers on module reload
+if not logger.handlers:
+    # Rotating file handler (rotates at 5MB, keeps 3 backups)
+    file_handler = RotatingFileHandler(
+        LOG_DIR / "app.log",
+        maxBytes=LOG_MAX_BYTES,
+        backupCount=LOG_BACKUP_COUNT
+    )
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logger.addHandler(file_handler)
+
+    # Console handler for debugging
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logger.addHandler(console_handler)
 
 
 # =============================================================================
@@ -472,15 +486,17 @@ def log_error(session_state: Dict, error_type: str, details: str):
 
 
 # =============================================================================
-# EMAIL STORAGE (Simple File-Based)
+# EMAIL STORAGE (Simple File-Based with Limits)
 # =============================================================================
 
 EMAILS_FILE = LOG_DIR / "collected_emails.json"
+MAX_EMAILS_STORED = 10000        # Maximum emails to store (prevents unbounded growth)
+EMAILS_FILE_MAX_MB = 2           # Maximum file size in MB
 
 
 def save_email(email: str, session_state: Dict, consent_given: bool = True) -> bool:
     """
-    Save an email to the collection file.
+    Save an email to the collection file with storage limits.
 
     Args:
         email: Email address
@@ -494,11 +510,23 @@ def save_email(email: str, session_state: Dict, consent_given: bool = True) -> b
         return False
 
     try:
+        # Check file size limit (prevent disk exhaustion attacks)
+        if EMAILS_FILE.exists():
+            file_size_mb = EMAILS_FILE.stat().st_size / (1024 * 1024)
+            if file_size_mb > EMAILS_FILE_MAX_MB:
+                logger.warning(f"Email file size limit reached ({file_size_mb:.1f}MB)")
+                return True  # Silently succeed to not reveal limit to potential attacker
+
         # Load existing emails
         emails_data = []
         if EMAILS_FILE.exists():
             with open(EMAILS_FILE, 'r') as f:
                 emails_data = json.load(f)
+
+        # Check count limit
+        if len(emails_data) >= MAX_EMAILS_STORED:
+            logger.warning(f"Email count limit reached ({len(emails_data)} emails)")
+            return True  # Silently succeed
 
         # Check for duplicate
         existing_emails = [e.get('email', '').lower() for e in emails_data]

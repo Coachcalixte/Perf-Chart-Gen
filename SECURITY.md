@@ -63,6 +63,28 @@ All significant events are logged to `logs/app.log`:
 - Stored securely in `logs/collected_emails.json`
 - Consent checkbox for marketing communications
 - Not exposed via any API
+- **Storage limits**: Max 10,000 emails, 2MB file size (prevents disk exhaustion)
+
+### 5. Log Management & Rotation
+
+**Log Rotation:**
+- Uses `RotatingFileHandler` for automatic log rotation
+- Max file size: 5MB per log file
+- Backup count: 3 files (total ~20MB max disk usage)
+- Files: `app.log`, `app.log.1`, `app.log.2`, `app.log.3`
+
+**Storage Limits:**
+| Resource | Limit | Purpose |
+|----------|-------|---------|
+| Log file size | 5 MB | Triggers rotation |
+| Log backup files | 3 | Total ~20MB max |
+| Email file size | 2 MB | Prevents disk exhaustion |
+| Email count | 10,000 | Prevents unbounded growth |
+
+**Protection Against:**
+- Disk exhaustion attacks (attacker flooding logs)
+- Unbounded file growth
+- Container crash from full disk
 
 ## Configuration
 
